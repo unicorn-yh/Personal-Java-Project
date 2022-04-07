@@ -1,0 +1,804 @@
+package protein;
+import java.io.*;
+import java.util.*;
+import java.util.stream.Collectors;
+import org.apache.poi.xssf.usermodel.*;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.*;
+import java.util.concurrent.TimeUnit;
+//数据库：swissprot_data.tsv
+//index,protein,accession,sequence,annotation,interpro,org
+
+class pro{
+    String filetype,sortMethod,filename="Protein";
+    static String ch;
+    List<ProteinData> tmp1=new ArrayList<>();
+    List<String> tmp2=new ArrayList<>();
+    List<ProteinData>datalist=new ArrayList<>();
+    String head[]=new String[8];
+    Scanner tt=new Scanner(System.in);
+    sort1 s=new sort1();
+    pro(){}
+    pro(String sortMethod){
+        this.sortMethod=sortMethod;
+    }
+    void getData(){
+        File fread=new File("C:/Users/User/Desktop/java-1223/project_dataset/swissprot_data.tsv");
+        try{
+            Reader in = new FileReader(fread);
+            BufferedReader br=new BufferedReader(in);
+            String n=null,s;
+            int i=1,flag=0;
+            while((n=br.readLine())!=null){
+                ProteinData v=new ProteinData();
+                StringTokenizer parse=new StringTokenizer(n,"\t");
+                while(parse.hasMoreTokens()){
+                    s=parse.nextToken();
+                    if(flag==0){
+                        head[i-1]=s;i++;
+                        if(i==8){
+                            head[8]="Type";
+                            flag=1;
+                            i=1;
+                        }
+                    } //表头
+                    else{
+                        if(i==1){v.setIndex(s);i++;}
+                        else if(i==2){v.setProtein(s);i++;}
+                        else if(i==3){v.setAccession(s);i++;}
+                        else if(i==4){v.setSequence(s);i++;}
+                        else if(i==5){v.setAnnotation(s);i++;}
+                        else if(i==6){v.setInterpro(s);i++;}
+                        else{
+                            v.setOrg(s);
+                            datalist.add(v);
+                            //System.out.println(v.data());
+                            i=1;
+                        }
+                    }     
+                } 
+            }
+            br.close();
+        }
+        catch(Exception e){
+            e.getStackTrace();
+        }
+    }
+    void parseData(){
+        if(sortMethod==null){
+            tmp1=datalist;
+        }
+        else if(sortMethod.equals("indexOnly")){
+            tmp2=s.indexOnly(datalist);
+            System.out.println("Size of dataset: "+tmp2.size());
+            filename+="-IndexOnly";
+            head[1]=head[2]=head[3]=head[4]=head[5]=head[6]="";
+        }
+        else if(sortMethod.equals("proteinOnly")){
+            tmp2=s.accessionOnly(datalist);
+            System.out.println("Size of dataset: "+tmp2.size());
+            filename+="-ProteinOnly";
+            head[0]=head[2]=head[3]=head[4]=head[5]=head[6]="";
+        }
+        else if(sortMethod.equals("accessionOnly")){
+            tmp2=s.accessionOnly(datalist);
+            System.out.println("Size of dataset: "+tmp2.size());
+            filename+="-AccessionOnly";
+            head[1]=head[0]=head[3]=head[4]=head[5]=head[6]="";
+        }
+        else if(sortMethod.equals("sequenceOnly")){
+            tmp2=s.accessionOnly(datalist);
+            System.out.println("Size of dataset: "+tmp2.size());
+            filename+="-SequenceOnly";
+            head[1]=head[2]=head[0]=head[4]=head[5]=head[6]="";
+        }
+        else if(sortMethod.equals("annotationOnly")){
+            tmp2=s.annotationOnly(datalist);
+            System.out.println("Size of dataset: "+tmp2.size());
+            filename+="-AnnotationOnly";
+            head[1]=head[2]=head[3]=head[0]=head[5]=head[6]="";
+        }  
+        else if(sortMethod.equals("interproOnly")){
+            tmp2=s.annotationOnly(datalist);
+            System.out.println("Size of dataset: "+tmp2.size());
+            filename+="-InterproOnly";
+            head[1]=head[2]=head[3]=head[4]=head[0]=head[6]="";
+        }  
+        else if(sortMethod.equals("orgOnly")){
+            tmp2=s.annotationOnly(datalist);
+            System.out.println("Size of dataset: "+tmp2.size());
+            filename+="-OrgOnly";
+            head[1]=head[2]=head[3]=head[4]=head[5]=head[0]="";
+        }  
+        /*else if(sortMethod.equals("typeOnly")){
+            tmp2=s.typeOnly(datalist);
+            System.out.println("Size of dataset: "+tmp2.size());
+            filename+="-TypeOnly";
+            head[0]=head[1]="";
+        }  */
+        else if(sortMethod.equals("parseIndex")){
+            tmp1=s.parseIndex(datalist);
+            while(tmp1.size()==0){
+                System.out.println("No data matched! Please input again.");
+                System.out.println("------------------PARSE--INDEX------------------");
+                tmp1=s.parseIndex(datalist);
+            }
+            System.out.println("Size of dataset: "+tmp1.size());
+            filename+="-parseIndex-"+ch;
+            int a=variousOutputMethod(tmp1,"parseIndex");
+            if(a==1){
+                head[1]=head[2]=head[3]=head[4]=head[5]=head[6]="";
+                tmp1.clear();
+            }   
+        } 
+        else if(sortMethod.equals("parseProtein")){
+            tmp1=s.parseProtein(datalist);
+            while(tmp1.size()==0){
+                System.out.println("No data matched! Please input again.");
+                System.out.println("-----------------PARSE--PROTEIN------------------");
+                tmp1=s.parseProtein(datalist);
+            }
+            System.out.println("Size of dataset: "+tmp1.size());
+            filename+="-parseProtein-"+ch;
+            int a=variousOutputMethod(tmp1,"parseProtein");
+            if(a==1){
+                head[0]=head[2]=head[3]=head[4]=head[5]=head[6]="";
+                tmp1.clear();
+            }   
+        } 
+        else if(sortMethod.equals("parseAccession")){
+            tmp1=s.parseAccession(datalist);
+            while(tmp1.size()==0){
+                System.out.println("No data matched! Please input again.");
+                System.out.println("-----------------PARSE--ACCESSION-----------------");
+                tmp1=s.parseAccession(datalist);
+            }
+            System.out.println("Size of dataset: "+tmp1.size());
+            filename+="-parseAccession-"+ch;
+            int a=variousOutputMethod(tmp1,"parseAccesion");
+            if(a==1){
+                head[1]=head[0]=head[3]=head[4]=head[5]=head[6]="";
+                tmp1.clear();
+            }   
+        }  
+        else if(sortMethod.equals("parseSequence")){
+            tmp1=s.parseSequence(datalist);
+            while(tmp1.size()==0){
+                System.out.println("No data matched! Please input again.");
+                System.out.println("-----------------PARSE--SEQUENCE-----------------");
+                tmp1=s.parseSequence(datalist);
+            }
+            System.out.println("Size of dataset: "+tmp1.size());
+            filename+="-parseSequence-"+ch;
+            int a=variousOutputMethod(tmp1,"parseSequence");
+            if(a==1){
+                head[1]=head[2]=head[0]=head[4]=head[5]=head[6]="";
+                tmp1.clear();
+            }
+        }
+        else if(sortMethod.equals("parseAnnotation")){
+            tmp1=s.parseAnnotation(datalist);
+            while(tmp1.size()==0){
+                System.out.println("No data matched! Please input again.");
+                System.out.println("-----------------PARSE--ANNOTATION-----------------");
+                tmp1=s.parseAnnotation(datalist);
+            }
+            System.out.println("Size of dataset: "+tmp1.size());
+            filename+="-parseAnnotation-"+ch;
+            int a=variousOutputMethod(tmp1,"parseAnnotation");
+            if(a==1){
+                head[1]=head[2]=head[3]=head[0]=head[5]=head[6]="";
+                tmp1.clear();
+            }
+        }
+        else if(sortMethod.equals("parseInterpro")){
+            tmp1=s.parseInterpro(datalist);
+            while(tmp1.size()==0){
+                System.out.println("No data matched! Please input again.");
+                System.out.println("-----------------PARSE--INTERPRO-----------------");
+                tmp1=s.parseInterpro(datalist);
+            }
+            System.out.println("Size of dataset: "+tmp1.size());
+            filename+="-parseInterpro-"+ch;
+            int a=variousOutputMethod(tmp1,"parseInterpro");
+            if(a==1){
+                head[1]=head[2]=head[3]=head[4]=head[0]=head[6]="";
+                tmp1.clear();
+            }
+        }
+        else if(sortMethod.equals("parseOrg")){
+            tmp1=s.parseOrg(datalist);
+            while(tmp1.size()==0){
+                System.out.println("No data matched! Please input again.");
+                System.out.println("--------------------PARSE--ORG--------------------");
+                tmp1=s.parseOrg(datalist);
+            }
+            System.out.println("Size of dataset: "+tmp1.size());
+            filename+="-parseOrg-"+ch;
+            int a=variousOutputMethod(tmp1,"parseOrg");
+            if(a==1){
+                head[1]=head[2]=head[3]=head[4]=head[5]=head[0]="";
+                tmp1.clear();
+            }
+        }
+        /*else if(sortMethod.equals("parseType")){
+            tmp1=s.parseType(datalist);
+            System.out.println("Size of dataset: "+tmp1.size());
+            filename+="-parseType-"+ch;
+        }*/
+    }
+    int variousOutputMethod(List<ProteinData>ls,String st){
+        System.out.println("1. View the column of parsed data only.");
+        System.out.println("2. View whole table of parsed data.");
+        int input=tt.nextInt();
+        while(input>2||input<1){
+            System.out.println("Illegal input，please input number 1 or 2:");
+            input=tt.nextInt();
+        }
+        if(input==1){
+            if(st.equals("parseIndex"))tmp2=s.indexOnly(ls);
+            else if(st.equals("parseProtein"))tmp2=s.proteinOnly(ls);
+            else if(st.equals("parseAccesion"))tmp2=s.accessionOnly(ls);
+            else if(st.equals("parseSequence"))tmp2=s.sequenceOnly(ls);
+            else if(st.equals("parseAnnotation"))tmp2=s.annotationOnly(ls);
+            else if(st.equals("parseinterpro"))tmp2=s.interproOnly(ls);
+            else tmp2=s.orgOnly(ls);
+        }
+        return input;
+    }
+    void outputData(){
+        filetype=FileFormat.setFileType();
+        if(filetype.equals("xlsx")) FileFunction.generateToExcel(filename,tmp1,tmp2,head);
+        else if(filetype.equals("txt")) FileFunction.generateToTxt(filename,tmp1,tmp2,head);
+    }
+}
+class sort1{
+    Scanner t=new Scanner(System.in);
+    List<String> indexOnly(List<ProteinData>tmp1){
+        List<String>tmp2 = tmp1.stream().map(ProteinData::getIndex).collect(Collectors.toList());
+        return tmp2; 
+    }
+    List<String> proteinOnly(List<ProteinData>tmp1){
+        List<String>tmp2 = tmp1.stream().map(ProteinData::getProtein).collect(Collectors.toList());
+        return tmp2; 
+    }
+    List<String> accessionOnly(List<ProteinData>tmp1){
+        List<String>tmp2 = tmp1.stream().map(ProteinData::getAccession).collect(Collectors.toList());
+        return tmp2; 
+    }
+    List<String> sequenceOnly(List<ProteinData>tmp1){
+        List<String>tmp2 = tmp1.stream().map(ProteinData::getSequence).collect(Collectors.toList());
+        return tmp2; 
+    }
+    List<String> annotationOnly(List<ProteinData>tmp1){
+        List<String>tmp2 = tmp1.stream().map(ProteinData::getAnnotation).collect(Collectors.toList());
+        return tmp2; 
+    }
+    List<String> interproOnly(List<ProteinData>tmp1){
+        List<String>tmp2 = tmp1.stream().map(ProteinData::getInterpro).collect(Collectors.toList());
+        return tmp2; 
+    }
+    List<String> orgOnly(List<ProteinData>tmp1){
+        List<String>tmp2 = tmp1.stream().map(ProteinData::getOrg).collect(Collectors.toList());
+        return tmp2; 
+    }
+    List<ProteinData> parseIndex(List<ProteinData>tmp1){
+        List<ProteinData>tmp2=new ArrayList<>();
+        System.out.println("Ways to parse Index data:");
+        System.out.println("1. Ascending order.");
+        System.out.println("2. Descending order.");
+        System.out.println("3. Find Index.");
+        System.out.println("4. Find Index by certain contained digits.");
+        String input=t.next();
+        while(!(input.equals("1")||input.equals("2")||input.equals("3")||input.equals("4"))){
+            System.out.println("Illegal input，please input number 1-4:");
+            input=t.next();
+        }
+        if(input.equals("1")){
+            pro.ch="ascending";
+            tmp2=tmp1.stream().sorted(Comparator.comparing(ProteinData::getIndex)).collect(Collectors.toList());
+        }
+        else if(input.equals("2")){
+            pro.ch="descending";
+            tmp2=tmp1.stream().sorted(Comparator.comparing(ProteinData::getIndex).reversed()).collect(Collectors.toList());
+        }
+        else if(input.equals("3")){
+            System.out.println("Please input the index:");
+            String a=t.next();
+            while(!a.chars().allMatch(Character::isDigit)){
+                System.out.println("Illegal input，please input numbers only:");
+                a=t.next();
+            }
+            pro.ch=a;
+            tmp2=tmp1.stream().filter(s->s.getIndex().equals(pro.ch)).collect(Collectors.toList());
+        }
+        else{
+            System.out.println("Please input numbers contained in index:");
+            String a=t.next();
+            while(!a.chars().allMatch(Character::isDigit)){
+                System.out.println("Illegal input，please input numbers only:");
+                a=t.next();
+            }
+            pro.ch=a;
+            tmp2=tmp1.stream().filter(s->s.getIndex().contains(pro.ch)).collect(Collectors.toList());
+        }
+        return tmp2;
+    }
+    List<ProteinData> parseProtein(List<ProteinData>tmp1){
+        List<ProteinData>tmp2=new ArrayList<>();
+        System.out.println("Ways to parse Protein data:");
+        System.out.println("1. Find Protein by full name.");
+        System.out.println("2. Find Protein by certain contained character.");
+        String input=t.next();
+        while(!(input.equals("1")||input.equals("2"))){
+            System.out.println("Illegal input，please input number 1 or 2:");
+            input=t.next();
+        }
+        if(input.equals("1")){
+            System.out.println("Please input the name of Protein:");
+            String a=t.next();
+            if(!(a.chars().allMatch(Character::isLetterOrDigit)&&a.contains("_"))){
+                System.out.println("Illegal input，please input letters, numbers or '_' only.");
+                a=t.next();
+            }
+            pro.ch=a.toUpperCase();
+            tmp2=tmp1.stream().filter(s->s.getProtein().equals(pro.ch)).collect(Collectors.toList());
+        }
+        else{
+            System.out.println("Please input characters contained in the name of Protein:");
+            String a=t.next();
+            if(!a.chars().allMatch(Character::isLetterOrDigit)){
+                System.out.println("Illegal input，please input letters or numbers only.");
+                a=t.next();
+            }
+            pro.ch=a.toUpperCase();
+            tmp2=tmp1.stream().filter(s->s.getProtein().contains(pro.ch)).collect(Collectors.toList());
+        }
+        return tmp2;
+    }
+    List<ProteinData> parseAccession(List<ProteinData>tmp1){
+        List<ProteinData>tmp2=new ArrayList<>();
+        System.out.println("Ways to parse Accession data:");
+        System.out.println("1. Find Accession by full name.");
+        System.out.println("2. Find Accession by certain contained character.");
+        String input=t.next();
+        while(!(input.equals("1")||input.equals("2"))){
+            System.out.println("Illegal input，please input number 1 or 2:");
+            input=t.next();
+        }
+        if(input.equals("1")){
+            System.out.println("Please input the name of Accession:");
+            String a=t.next();
+            if(!a.chars().allMatch(Character::isLetterOrDigit)){
+                System.out.println("Illegal input，please input letters or numbers only.");
+                a=t.next();
+            }
+            pro.ch=a.toUpperCase();
+            tmp2=tmp1.stream().filter(s->s.getAccession().equals(pro.ch)).collect(Collectors.toList());
+        }
+        else{
+            System.out.println("Please input characters contained in Accession:");
+            String a=t.next();
+            if(!a.chars().allMatch(Character::isLetterOrDigit)){
+                System.out.println("Illegal input，please input letters or numbers only.");
+                a=t.next();
+            }
+            pro.ch=a.toUpperCase();
+            tmp2=tmp1.stream().filter(s->s.getAccession().contains(pro.ch)).collect(Collectors.toList());
+        }
+        return tmp2;
+    }
+    List<ProteinData> parseSequence(List<ProteinData>tmp1){
+        List<ProteinData>tmp2=new ArrayList<>();
+        System.out.println("Ways to parse Sequence data:");
+        System.out.println("1. Find Sequence by length.");
+        System.out.println("2. Find Sequence by certain contained character.");
+        String input=t.next();
+        while(!(input.equals("1")||input.equals("2"))){
+            System.out.println("Illegal input，please input number 1 or 2:");
+            input=t.next();
+        }
+        if(input.equals("1")){
+            System.out.println("Please input the length of Protein Sequence:");
+            String a=t.next();
+            if(!a.chars().allMatch(Character::isDigit)){
+                System.out.println("Illegal input，please input numbers only.");
+                a=t.next();
+            }
+            int b=Integer.parseInt(a);
+            pro.ch="length"+a;
+            tmp2=tmp1.stream().filter(s->(s.getSequence()).length()==b).collect(Collectors.toList());
+        }
+        else{
+            System.out.println("Please input characters contained in Sequence:");
+            String a=t.next();
+            if(!a.chars().allMatch(Character::isLetter)){
+                System.out.println("Illegal input，please input letters only.");
+                a=t.next();
+            }
+            pro.ch=a.toUpperCase();
+            tmp2=tmp1.stream().filter(s->s.getAccession().contains(pro.ch)).collect(Collectors.toList());
+        }
+        return tmp2;
+    }
+    List<ProteinData> parseAnnotation(List<ProteinData>tmp1){
+        List<ProteinData>tmp2=new ArrayList<>();
+        System.out.println("Ways to parse Annotation data:");
+        System.out.println("1. Find Annotation by index.");
+        System.out.println("2. Find Annotation by certain contained character.");
+        String input=t.next();
+        while(!(input.equals("1")||input.equals("2"))){
+            System.out.println("Illegal input，please input number 1 or 2:");
+            input=t.next();
+        }
+        if(input.equals("1")){
+            System.out.println("Please input the Annotation index:");
+            String a=t.next();
+            while(!a.chars().allMatch(Character::isDigit)){
+                System.out.println("Illegal input，please input numbers only:");
+                a=t.next();
+            }
+            pro.ch=a;
+            tmp2=tmp1.stream().filter(s->(s.getAnnotation()).replace("GO:","").contains(pro.ch)).collect(Collectors.toList());
+        }
+        else{
+            System.out.println("Please input numbers contained in Annotation index:");
+            String a=t.next();
+            while(!a.chars().allMatch(Character::isDigit)){
+                System.out.println("Illegal input，please input numbers only:");
+                a=t.next();
+            }
+            pro.ch=a;
+            tmp2=tmp1.stream().filter(s->(s.getAnnotation()).replace("GO:","").contains(pro.ch)).collect(Collectors.toList());
+        }
+        return tmp2;
+    }
+    List<ProteinData> parseInterpro(List<ProteinData>tmp1){
+        List<ProteinData>tmp2=new ArrayList<>();
+        System.out.println("Ways to parse Interpro data:");
+        System.out.println("1. Find Interpro by index.");
+        System.out.println("2. Find Interpro by certain contained character.");
+        String input=t.next();
+        while(!(input.equals("1")||input.equals("2"))){
+            System.out.println("Illegal input，please input number 1 or 2:");
+            input=t.next();
+        }
+        if(input.equals("1")){
+            System.out.println("Please input the Interpro index:");
+            String a=t.next();
+            while(!a.chars().allMatch(Character::isDigit)){
+                System.out.println("Illegal input，please input numbers only:");
+                a=t.next();
+            }
+            pro.ch=a;
+            tmp2=tmp1.stream().filter(s->(s.getAnnotation()).replace("IPR","").contains(pro.ch)).collect(Collectors.toList());
+        }
+        else{
+            System.out.println("Please input numbers contained in Interpro index:");
+            String a=t.next();
+            while(!a.chars().allMatch(Character::isDigit)){
+                System.out.println("Illegal input，please input numbers only:");
+                a=t.next();
+            }
+            pro.ch=a;
+            tmp2=tmp1.stream().filter(s->(s.getAnnotation()).replace("IPR","").contains(pro.ch)).collect(Collectors.toList());
+        }
+        return tmp2;
+    }
+    List<ProteinData> parseOrg(List<ProteinData>tmp1){
+        List<ProteinData>tmp2=new ArrayList<>();
+        System.out.println("Ways to parse Org data:");
+        System.out.println("1. Ascending order.");
+        System.out.println("2. Descending order.");
+        System.out.println("3. Find Org number.");
+        System.out.println("4. Find Org number by certain contained digits.");
+        String input=t.next();
+        while(!(input.equals("1")||input.equals("2")||input.equals("3")||input.equals("4"))){
+            System.out.println("Illegal input，please input number 1-4:");
+            input=t.next();
+        }
+        if(input.equals("1")){
+            pro.ch="ascending";
+            tmp2=tmp1.stream().sorted(Comparator.comparing(ProteinData::getOrg)).collect(Collectors.toList());
+        }
+        else if(input.equals("2")){
+            pro.ch="descending";
+            tmp2=tmp1.stream().sorted(Comparator.comparing(ProteinData::getOrg).reversed()).collect(Collectors.toList());
+        }
+        else if(input.equals("3")){
+            System.out.println("Please input the Org number:");
+            String a=t.next();
+            while(!a.chars().allMatch(Character::isDigit)){
+                System.out.println("Illegal input，please input numbers only:");
+                a=t.next();
+            }
+            pro.ch=a;
+            tmp2=tmp1.stream().filter(s->s.getIndex().equals(pro.ch)).collect(Collectors.toList());
+        }
+        else{
+            System.out.println("Please input numbers contained in Org number:");
+            String a=t.next();
+            while(!a.chars().allMatch(Character::isDigit)){
+                System.out.println("Illegal input，please input numbers only:");
+                a=t.next();
+            }
+            pro.ch=a;
+            tmp2=tmp1.stream().filter(s->s.getIndex().contains(pro.ch)).collect(Collectors.toList());
+        }
+        return tmp2;
+    }
+    /*List<ProteinData> parseType(List<ProteinData>tmp1){
+        List<ProteinData>tmp2=new ArrayList<>();
+        System.out.println("Ways to parse Protein Type data:");
+        System.out.println("1. P\t2. C\t3. F");
+        String input=t.next();
+        while(!(input.equals("3")||input.equals("1")||input.equals("2"))){
+            System.out.println("Illegal input，please input number 1-3:");
+            input=t.next();
+        }
+        if(input.equals("1")) {
+            pro.ch="P";
+            tmp2=tmp1.stream().filter(s->s.getType().equals("P")).collect(Collectors.toList());
+        }
+        else if(input.equals("2")) {
+            pro.ch="C";
+            tmp2=tmp1.stream().filter(s->s.getType().equals("C")).collect(Collectors.toList());
+        }
+        else {
+            pro.ch="F";
+            tmp2=tmp1.stream().filter(s->s.getType().equals("F")).collect(Collectors.toList());
+        }
+        return tmp2;
+    }*/
+
+}
+class MainSort{  
+    static Scanner t1=new Scanner(System.in);
+    public static void mainSort(){
+        System.out.println("Enter number below to parse data:");
+        System.out.println("1. View index only.");
+        System.out.println("2. View proteins only.");
+        System.out.println("3. View accessions only.");
+        System.out.println("4. View sequences only.");
+        System.out.println("5. View annotations only.");
+        System.out.println("6. View interpros only.");
+        System.out.println("7. View orgs only.");
+        System.out.println("--------------------------------------");
+        System.out.println("8. Parse index.");
+        System.out.println("9. Parse proteins.");
+        System.out.println("10. Parse accessions.");
+        System.out.println("11. Parse sequences.");
+        System.out.println("12. Parse annotations.");
+        System.out.println("13. Parse interpros.");
+        System.out.println("14. Parse orgs.");
+        String input=t1.next();
+        while(!(input.equals("3")||input.equals("1")||input.equals("2")||input.equals("4")||input.equals("5")||input.equals("6")||input.equals("7")||input.equals("8")||input.equals("9")||input.equals("10")||input.equals("11")||input.equals("12")||input.equals("13")||input.equals("14"))){
+            System.out.println("Illegal input，please input number 1-14:");
+            input=t1.next();
+        }
+        String sortMethod=null;
+        pro p=new pro();
+        if(input.equals("1")) sortMethod="indexOnly";
+        else if(input.equals("2")) sortMethod="proteinOnly";
+        else if(input.equals("3")) sortMethod="accessionOnly";
+        else if(input.equals("4")) sortMethod="sequenceOnly";
+        else if(input.equals("5")) sortMethod="annotationOnly";
+        else if(input.equals("6")) sortMethod="interproOnly";
+        else if(input.equals("7")) sortMethod="orgOnly";
+        else if(input.equals("8")) sortMethod="parseIndex";
+        else if(input.equals("9")) sortMethod="parseProtein";
+        else if(input.equals("10")) sortMethod="parseAccesion";
+        else if(input.equals("11")) sortMethod="parseSequence";
+        else if(input.equals("12")) sortMethod="parseAnnotation";
+        else if(input.equals("13")) sortMethod="parseInterpro";
+        else sortMethod="parseOrg";
+        p=new pro(sortMethod);
+        p.getData();
+        p.parseData();
+        p.outputData();
+        //System.out.println("是否继续筛选数据？是，扣1；不是，扣0；");
+        
+    }
+}
+class FileFormat{
+    public static String setFileType1(){
+        Scanner s=new Scanner(System.in);
+        System.out.println("Please select format of the file:");
+        System.out.println("1. xlsx");
+        System.out.println("2. txt");
+        String a=s.next();
+        while(!(a.equals("1")||a.equals("2"))){
+            System.out.println("Illegal input，please input number 1 or 2:");
+            a=s.next();
+        }
+        String fileformat;
+        if(a.equals("1"))fileformat="xlsx";
+        else fileformat="txt";
+        return fileformat;
+    }
+}
+class ProteinData{
+    String index,protein,accession,sequence,annotation,interpro,org;
+    int seqLength;
+    String data(){
+        return index+","+protein+","+accession+","+sequence+","+annotation+","+interpro+","+org;
+    }
+    void setIndex(String index){
+        this.index=index;
+    }
+    void setProtein(String protein){
+        this.protein=protein;
+    }
+    void setAccession(String accession){
+        this.accession=accession;
+    }
+    void setSequence(String sequence){
+        this.sequence=sequence;
+    }
+    void setAnnotation(String annotation){
+        this.annotation=annotation;
+    }
+    void setInterpro(String interpro){
+        this.interpro=interpro;
+    }
+    void setOrg(String org){
+        this.org=org;
+    }
+    String getIndex(){
+        return index;
+    }
+    String getProtein(){
+        return protein;
+    }
+    String getAccession(){
+        return accession;
+    }
+    String getSequence(){
+        return sequence;
+    }
+    String getAnnotation(){
+        return annotation;
+    }
+    String getInterpro(){
+        return interpro;
+    }
+    String getOrg(){
+        return org;
+    }
+    int getSequenceLength(){
+        seqLength=getSequence().length();
+        return seqLength;
+    }
+}
+class FileFunction{
+    static String path="C:/Users/User/Desktop/";
+    public static void generateToExcel(String filename,List<ProteinData>list1,List<String>list2,String title[]){
+        String fileType="xlsx";
+        String excelPath=path+filename+"."+fileType;
+        XSSFWorkbook wb=new XSSFWorkbook();
+        XSSFSheet sheet=wb.createSheet("Protein sheet1");
+
+        //添加表头  
+        Row row = sheet.createRow(0);
+        Cell cell = row.createCell(0);
+        row.setHeight((short)540); 
+        cell.setCellValue(filename);    //创建第一行  
+
+        CellStyle style=wb.createCellStyle(); // 样式对象 
+        Font font=wb.createFont();
+        font.setFontName("Arial");
+        font.setFontHeightInPoints((short)14);
+        font.setBold(true);
+        style.setFont(font);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);// 垂直      
+        style.setAlignment(HorizontalAlignment.CENTER);// 水平  
+        style.setLocked(false); 
+        style.setFillForegroundColor(IndexedColors.PALE_BLUE.getIndex());
+        style.setWrapText(true); // 指定当单元格内容显示不下时自动换行
+        style.getShrinkToFit();
+        cell.setCellStyle(style); // 样式居中
+        sheet.addMergedRegion(new CellRangeAddress(0,0,0,7));  //单元格合并,四个参数：起始行，起始列，结束行，结束列  
+        sheet.autoSizeColumn(5200);
+
+        row=sheet.createRow(1);    //创建第二行  
+        for(int i=0,b=0;i<title.length;i++){  
+            if(!title[i].equals("")){
+                cell=row.createCell(b);
+                cell.setCellValue(title[i]);  
+                cell.setCellStyle(style); // 样式，居中
+                sheet.setColumnWidth(b,20*256); 
+                b++;
+            }
+        }  
+
+        row.setHeight((short) 540);  
+  
+        if(list1.size()>=1){
+            int j=2;
+            System.out.println("Processing data...");
+            for(ProteinData i:list1){
+                row=sheet.createRow(j++);
+                row.setHeight((short)500); 
+                row.createCell(0).setCellValue(i.getIndex());
+                row.createCell(1).setCellValue(i.getProtein());
+                row.createCell(2).setCellValue(i.getAccession());
+                row.createCell(3).setCellValue(i.getSequence());
+                row.createCell(4).setCellValue(i.getAnnotation());
+                row.createCell(5).setCellValue(i.getInterpro());
+                row.createCell(6).setCellValue(i.getOrg());
+                row.createCell(7).setCellValue(i.getSequenceLength());
+            }
+        }  
+        else{
+            int j=2;
+            System.out.println("Processing data...");
+            for(String i:list2){
+                row=sheet.createRow(j++);
+                row.setHeight((short) 500); 
+                row.createCell(0).setCellValue(i);
+            }
+
+        }
+        try{
+            FileOutputStream out = new FileOutputStream(new File(excelPath));
+            wb.write(out);
+            out.close();
+            wb.close();
+            System.out.println(filename+".xlsx written successfully on disk.");
+            System.out.println("Directory path: "+excelPath+", please check it out.");
+        } 
+        catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+    public static void generateToTxt(String filename,List<ProteinData>list1,List<String>list2,String title[]){
+        String txtPath=path+filename+".txt";
+        try{
+            System.out.println("Processing data...");
+            FileWriter fw=new FileWriter(txtPath);
+            for(String i:title)if(!i.equals(""))fw.write(i+"  ");
+            fw.write(System.lineSeparator());
+            if(list1.size()>=1){
+                for(ProteinData v:list1)fw.write(v.data()+System.lineSeparator());
+            }
+            else{
+                for(String v:list2)fw.write(v+System.lineSeparator());
+            }
+            fw.close();
+            System.out.println(filename+".txt written successfully on disk.");
+            System.out.println("Directory path: "+txtPath+", please check it out.");
+        } 
+        catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+}
+public class proteinTest2{
+    public static void main(String args[]){
+        pro v;
+        System.out.print("Getting protein data from swissprot_data.tsv");
+        for(int i=0;i<6;i++){
+            System.out.print(".");
+            try{
+                TimeUnit.MILLISECONDS.sleep(250);
+            }
+            catch(Exception e){
+                e.getMessage();
+            }
+        }    
+        System.out.println("\nDo you want to parse the data？Yes, press 1; No, press 0;");
+        Scanner sc=new Scanner(System.in);
+        int parseData=sc.nextInt();
+        String sortMethod=null;
+        if(parseData==0){
+            v=new pro(sortMethod);
+            v.getData();
+            v.parseData();
+            v.outputData();
+        }
+        if(parseData==1)MainSort.mainSort();  
+        sc.close();
+    }
+}
+
+
